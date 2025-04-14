@@ -3,7 +3,7 @@ import json
 import paho.mqtt.client as paho
 import time
 from register_mapping import Registermapping
-
+from modbus_readahead import ModbusReadahead
 instrument = minimalmodbus.Instrument('/dev/serial/by-id/usb-1a86_USB2.0-Serial-if00-port0',
                                       1)  # port name, slave address (in decimal)
 instrument.serial.baudrate = 9600
@@ -40,10 +40,15 @@ energy_regs = [
 	"ExpEp"
 ]
 
+mra = ModbusReadahead(instrument)
+
 while True:
 	try:
-		power = {reg: instrument.read_float(Registermapping[reg]["addr"], 3)*Registermapping[reg]["scale"] for reg in power_regs}
-		energy = {reg: instrument.read_float(Registermapping[reg]["addr"], 3)*Registermapping[reg]["scale"] for reg in energy_regs}
+		mra.read_float_ahead(Registermapping[power_regs[0]]["addr"], len(power_regs))
+		mra.read_float_ahead(Registermapping[energy_regs[0]]["addr"], len(energy_regs))
+
+		power = {reg: mra.read_float(Registermapping[reg]["addr"])*Registermapping[reg]["scale"] for reg in power_regs}
+		energy = {reg: mra.read_float(Registermapping[reg]["addr"])*Registermapping[reg]["scale"] for reg in energy_regs}
 		if power != power_sent:
 			client1.publish(f"smartmeter/power", json.dumps(power))
 			print(f"publish power: {power}")
@@ -57,3 +62,5 @@ while True:
 		instrument.serial.close()
 		instrument.serial.open()
 		time.sleep(1)
+	time.sleep(0.05) # rs485usb com is more stable with this
+

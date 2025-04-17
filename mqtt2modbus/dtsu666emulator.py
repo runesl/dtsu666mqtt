@@ -83,14 +83,23 @@ class dtsu666Emulator:
 
 	#------------------------------------------------
 	def update(self, data):
+		prev_update_tsmp = 0
+		publish_tsmp = 0
 		for k,v in data.items():
-			reg = Registermapping[k]["addr"]
+			if k=="prev_update_tsmp":
+				prev_update_tsmp = v
+			elif k=="publish_tsmp":
+				publish_tsmp = v
+			else:
+				reg = Registermapping[k]["addr"]
 
-			d = v / Registermapping[k]["scale"]
-			builder = BinaryPayloadBuilder(byteorder=byteorder, wordorder=wordorder)
-			builder.add_32bit_float(d)
+				d = v / Registermapping[k]["scale"]
+				builder = BinaryPayloadBuilder(byteorder=byteorder, wordorder=wordorder)
+				builder.add_32bit_float(d)
 
-			self._setval(reg, builder.to_registers())
+				self._setval(reg, builder.to_registers())
+		now = time.time()
+		logging.debug(f"delay_since_previous_update: {now-prev_update_tsmp:.3f} mqtt_delay: {now-publish_tsmp:.3f}")
 
 # ==========================================================================================
 # ==========================================================================================

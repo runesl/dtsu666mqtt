@@ -80,8 +80,9 @@ def mqtt_on_message(client, userdata, msg):
 	if msg.topic == MQTT_Settings['AMS_Topic'] + "/power":
 		d = json.loads(msg.payload.decode("utf-8"))
 
-#		logging.info("..update power..")
-#		logging.debug(pp.pformat(d))
+#
+#		logging.info("..update power.. Latency: {d.tsmp}")
+		logging.debug(pp.pformat(d))
 		em1.update(d)
 
 
